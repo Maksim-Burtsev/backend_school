@@ -1,3 +1,12 @@
 from django.contrib import admin
 
-# Register your models here.
+from main.models import Category, Offer
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ('uuid', 'name', 'price', 'last_update')
+
+
+@admin.register(Offer)
+class OfferAdmin(admin.ModelAdmin):
+    list_display = ('uuid', 'name', 'price', 'last_update')
