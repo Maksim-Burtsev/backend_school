@@ -3,3 +3,6 @@ db:
 
 run:
 	docker-compose up
+
+shell:
+	docker-compose run web python manage.py shell

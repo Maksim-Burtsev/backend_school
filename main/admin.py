@@ -1,12 +1,7 @@
 from django.contrib import admin
 
-from main.models import Category, Offer
+from main.models import Item
 
-@admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('uuid', 'name', 'price', 'last_update')
-
-
-@admin.register(Offer)
-class OfferAdmin(admin.ModelAdmin):
-    list_display = ('uuid', 'name', 'price', 'last_update')
+@admin.register(Item)
+class ItemAdmin(admin.ModelAdmin):
+    list_display = ('_type', 'uuid', 'name', 'price', 'last_update')
