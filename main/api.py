@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from ninja import NinjaAPI
 from ninja.errors import HttpError
 
@@ -11,7 +13,7 @@ api = NinjaAPI()
 
 
 @api.post("/imports", response={200: str, 400: str})
-def hello(request, data: ImportSchema):
+def import_data(request, data: ImportSchema):
     request_data = data.dict()
     date = request_data.get('updateDate')
     if not _is_date_in_iso8601(date):
@@ -27,4 +29,15 @@ def hello(request, data: ImportSchema):
     for i in items:
         _save_item(item=i, db_items=db_items, date=date, items_dict=items_dict)
 
-    return "Seems good"
+    return "Success"
+
+#TODO 422 -> 400
+@api.delete("/delete/{id}", response={200: str, 404: str})
+def delete_item(request, id: UUID):
+    try:
+        item_obj = Item.objects.get(uuid=id)
+    except Item.DoesNotExist:
+        raise HttpError(404, 'Item not found')
+    else:
+        item_obj.delete()
+        return 200, "Success"
