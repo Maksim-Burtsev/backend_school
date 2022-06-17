@@ -27,5 +27,5 @@ class Item(models.Model):
             raise ValidationError('Price of category must be null')
         if self._type == 'offer' and self.price < 0:
             raise ValidationError('Price of offer must be >=0')
-
+        
         return super().save(*args, **kwargs)
