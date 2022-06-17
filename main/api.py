@@ -1,4 +1,5 @@
 from ninja import NinjaAPI
+from ninja.errors import HttpError
 
 from main.models import Item
 from main.schemas import ImportSchema
@@ -14,8 +15,7 @@ def hello(request, data: ImportSchema):
     request_data = data.dict()
     date = request_data.get('updateDate')
     if not _is_date_in_iso8601(date):
-        # тут раиз 400
-        pass
+        raise HttpError(400, 'Validation error')
 
     items = request_data.get('items')
     items_dict = {i['id']: i for i in items}
