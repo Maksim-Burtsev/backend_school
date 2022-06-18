@@ -1,7 +1,6 @@
 from enum import Enum
 from uuid import UUID
 from typing import Optional
-from datetime import datetime
 
 from ninja import Schema, Field
 

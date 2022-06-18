@@ -1,9 +1,21 @@
 import re
+from typing import NamedTuple
+from uuid import UUID
 
 from main.models import Item
 
 
-def _save_item(item, db_items, date, items_dict):
+class PriceCountTuple(NamedTuple):
+    price: int
+    count: int
+
+
+class ItemsParentsTuple(NamedTuple):
+    items_id: list[UUID]
+    parentd_id: list[UUID]
+
+
+def _save_item(item: dict, db_items: dict, date: str, items_dict: dict) -> None:
     """
     Создаёт/обновляет объект в базе данных 
 
@@ -35,7 +47,7 @@ def _save_item(item, db_items, date, items_dict):
     item_obj.save()
 
 
-def _is_date_in_iso8601(date):
+def _is_date_in_iso8601(date: str) -> bool:
     """
     Проверяет время на соответствие формату ISO-8601
     """
@@ -51,7 +63,8 @@ def _is_date_in_iso8601(date):
     return False
 
 
-def _get_price_of_category(category_obj):
+# TODO rename
+def _get_price_of_category(category_obj: Item) -> PriceCountTuple:
     """
     Вычисляет price категории. Рекурсивно обходит все подкатегории.
     """
@@ -65,10 +78,10 @@ def _get_price_of_category(category_obj):
             if item.price:
                 res += item.price
                 item_count += 1
-    return res, item_count
+    return PriceCountTuple(price=res, count=item_count)
 
 
-def _update_parents_date(parent_id, date):
+def _update_parents_date(parent_id: UUID, date: str) -> None:
     """
     Обновляет дату у всех родителей
     """
@@ -78,3 +91,17 @@ def _update_parents_date(parent_id, date):
     item_obj.save()
     if item_obj.parent:
         _update_parents_date(item_obj.parent.uuid, date)
+
+
+def _get_items_and_parents_id(items: dict) -> ItemsParentsTuple:
+    """
+    Формирует на основе входных данных два списка: id всех элементов и id родителей
+    """
+    items_id = [item['id'] for item in items]
+    parents_id = list(set([item['parentId']
+                      for item in items if item['parentId']]))
+
+    items_id.extend(parents_id)
+    items_id = list(set(items_id))
+
+    return ItemsParentsTuple(items_id=items_id, parentd_id=parents_id)

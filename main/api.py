@@ -5,34 +5,36 @@ from ninja.errors import HttpError
 
 from main.models import Item
 from main.schemas import ImportSchema, ChildrenSchema
-from main.services import _is_date_in_iso8601, _save_item, _update_parents_date
+from main.services import (
+    _is_date_in_iso8601,
+    _save_item,
+    _update_parents_date,
+    _get_items_and_parents_id
+)
 
 api = NinjaAPI()
 
 # TODO обработать 422
 
 
-@api.post("/imports", response={200: str, 400: str})
+@ api.post("/imports", response={200: str, 400: str})
 def import_data(request, data: ImportSchema):
     request_data = data.dict()
+
+    items = request_data.get('items')
     date = request_data.get('updateDate')
+
     if not _is_date_in_iso8601(date):
         raise HttpError(400, 'Validation error')
 
-    items = request_data.get('items')
     items_dict = {i['id']: i for i in items}
-
-    items_id = [item['id'] for item in items]
-    parents_id = list(set([item['parentId']
-                      for item in items if item['parentId']]))
-
-    items_id.extend(parents_id)
-    items_id = list(set(items_id))
+    items_id, parents_id = _get_items_and_parents_id(items)
 
     db_items = Item.objects.filter(uuid__in=items_id)
 
-    for i in items:
-        _save_item(item=i, db_items=db_items, date=date, items_dict=items_dict)
+    for item in items:
+        _save_item(item=item, db_items=db_items,
+                   date=date, items_dict=items_dict)
 
     for parent_id in parents_id:
         _update_parents_date(parent_id=parent_id, date=date)
@@ -42,7 +44,7 @@ def import_data(request, data: ImportSchema):
 # TODO 422 -> 400
 
 
-@api.delete("/delete/{id}", response={200: str, 404: str})
+@ api.delete("/delete/{id}", response={200: str, 404: str})
 def delete_item(request, id: UUID):
     try:
         item_obj = Item.objects.get(uuid=id)
@@ -53,7 +55,7 @@ def delete_item(request, id: UUID):
         return 200, "Success"
 
 
-@api.get('/nodes/{id}', response=ChildrenSchema)
+@ api.get('/nodes/{id}', response=ChildrenSchema)
 def nodes(request, id: UUID):
     try:
         item_obj = Item.objects.get(uuid=id)
