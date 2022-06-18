@@ -13,9 +13,9 @@ class Item(models.Model):
     _type = models.CharField(max_length=21, choices=TYPE_CHOICES)
     uuid = models.UUIDField(unique=True)
     parent = models.ForeignKey('self', null=True,
-                               blank=True, on_delete=models.CASCADE)
+                               blank=True, on_delete=models.CASCADE, related_name='offers')
     name = models.CharField(max_length=255)
-    price = models.IntegerField(null=True, default=None)
+    price = models.IntegerField(null=True, default=None, blank=True)
     last_update = models.DateTimeField(blank=True, null=True)
 
     def __str__(self) -> str:

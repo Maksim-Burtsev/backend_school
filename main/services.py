@@ -2,6 +2,7 @@ import re
 
 from main.models import Item
 
+
 def _save_item(item, db_items, date, items_dict):
     """
     Создаёт/обновляет объект в базе данных 
@@ -14,18 +15,23 @@ def _save_item(item, db_items, date, items_dict):
     item_obj.name = item['name']
     item_obj.price = item['price']
     item_obj.last_update = date
-    if item['parentID']:
-        if db_items.filter(uuid=item['parentID']).exists():
-            parent_obj = db_items.get(uuid=item['parentID'])
+
+    if item['parentId']:
+        if db_items.filter(uuid=item['parentId']).exists():
+            parent_obj = db_items.get(uuid=item['parentId'])
+            parent_obj.last_update = date
+            parent_obj.save()
             item_obj.parent = parent_obj
         else:
-            parent_data = items_dict[item['parentID']]
+            parent_data = items_dict[item['parentId']]
             parent_obj, _ = Item.objects.get_or_create(
                 _type='category',
                 name=parent_data['name'],
-                uuid=parent_data['id']
+                uuid=parent_data['id'],
+                last_update=date,
             )
             item_obj.parent = parent_obj
+
     item_obj.save()
 
 
@@ -37,9 +43,26 @@ def _is_date_in_iso8601(date):
 
     match_iso8601 = re.compile(regex).match
 
-    try:            
+    try:
         if match_iso8601(date) is not None:
             return True
     except:
         pass
     return False
+
+
+def _get_price_of_category(category_obj):
+    """
+    Вычисляет price категории. Рекурсивно обходит все подкатегории.
+    """
+    res, item_count = 0, 0
+    for item in category_obj.offers.all():
+        if item._type == "category":
+            sub_res, sub_count = _get_price_of_category(item)
+            res += sub_res
+            item_count += sub_count
+        else:
+            if item.price:
+                res += item.price
+                item_count += 1
+    return res, item_count

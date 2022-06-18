@@ -1,7 +1,11 @@
 from enum import Enum
 from uuid import UUID
+from typing import Optional
+from datetime import datetime
 
-from ninja import Schema
+from ninja import Schema, Field
+
+from main.services import _get_price_of_category
 
 
 class TypeEnum(str, Enum):
@@ -13,10 +17,49 @@ class ItemSchema(Schema):
     type: TypeEnum
     id: UUID
     name: str
-    parentID: UUID = None
+    parentId: UUID = None
     price: int = None
 
 
 class ImportSchema(Schema):
     items: list[ItemSchema]
     updateDate: str
+
+
+class ChildrenSchema(Schema):
+    name: str
+    id: UUID = Field(..., alias='uuid')
+    price: int = None
+    date: datetime
+    type: str
+    parentID: UUID = Field(None, alias='parent.uuid')
+    childern: list[Optional['ChildrenSchema']] | None
+
+    @staticmethod
+    def resolve_childern(obj):
+        children = obj.offers.all()
+        if children:
+            return children
+        if obj._type == 'category':
+            return []
+        return None
+
+    @staticmethod
+    def resolve_type(obj):
+        return obj._type.upper()
+
+    @staticmethod
+    def resolve_price(obj):
+        if obj._type == 'offer':
+            return obj.price
+        res, offers = _get_price_of_category(obj)
+        if res == 0:
+            return None
+        return int(res/offers)
+
+    @staticmethod
+    def resolve_date(obj):
+        return obj.last_update.isoformat()
+
+
+ChildrenSchema.update_forward_refs()
