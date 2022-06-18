@@ -66,3 +66,15 @@ def _get_price_of_category(category_obj):
                 res += item.price
                 item_count += 1
     return res, item_count
+
+
+def _update_parents_date(parent_id, date):
+    """
+    Обновляет дату у всех родителей
+    """
+
+    item_obj = Item.objects.get(uuid=parent_id)
+    item_obj.last_update = date
+    item_obj.save()
+    if item_obj.parent:
+        _update_parents_date(item_obj.parent.uuid, date)

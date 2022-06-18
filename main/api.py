@@ -5,7 +5,7 @@ from ninja.errors import HttpError
 
 from main.models import Item
 from main.schemas import ImportSchema, ChildrenSchema
-from main.services import _is_date_in_iso8601, _save_item
+from main.services import _is_date_in_iso8601, _save_item, _update_parents_date
 
 api = NinjaAPI()
 
@@ -23,8 +23,9 @@ def import_data(request, data: ImportSchema):
     items_dict = {i['id']: i for i in items}
 
     items_id = [item['id'] for item in items]
+    parents_id = list(set([item['parentId']
+                      for item in items if item['parentId']]))
 
-    parents_id = [item['parentId'] for item in items]
     items_id.extend(parents_id)
     items_id = list(set(items_id))
 
@@ -32,6 +33,9 @@ def import_data(request, data: ImportSchema):
 
     for i in items:
         _save_item(item=i, db_items=db_items, date=date, items_dict=items_dict)
+
+    for parent_id in parents_id:
+        _update_parents_date(parent_id=parent_id, date=date)
 
     return "Success"
 

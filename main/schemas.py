@@ -30,13 +30,13 @@ class ChildrenSchema(Schema):
     name: str
     id: UUID = Field(..., alias='uuid')
     price: int = None
-    date: datetime
+    date: str
     type: str
-    parentID: UUID = Field(None, alias='parent.uuid')
-    childern: list[Optional['ChildrenSchema']] | None
+    parentId: UUID = Field(None, alias='parent.uuid')
+    children: list[Optional['ChildrenSchema']] | None
 
     @staticmethod
-    def resolve_childern(obj):
+    def resolve_children(obj):
         children = obj.offers.all()
         if children:
             return children
@@ -59,7 +59,7 @@ class ChildrenSchema(Schema):
 
     @staticmethod
     def resolve_date(obj):
-        return obj.last_update.isoformat()
+        return obj.last_update.isoformat()[:-6] + '.000Z'
 
 
 ChildrenSchema.update_forward_refs()
