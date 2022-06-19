@@ -1,5 +1,4 @@
 from django.db import models
-from django.core.exceptions import ValidationError
 
 
 class Item(models.Model):
@@ -20,12 +19,3 @@ class Item(models.Model):
 
     def __str__(self) -> str:
         return self.name
-
-    def save(self, *args, **kwargs):
-        #TODO move exception into api as validation
-        if self._type == 'category' and self.price:
-            raise ValidationError('Price of category must be null')
-        if self._type == 'offer' and self.price < 0:
-            raise ValidationError('Price of offer must be >=0')
-        
-        return super().save(*args, **kwargs)

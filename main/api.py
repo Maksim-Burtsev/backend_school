@@ -4,22 +4,26 @@ from datetime import timedelta
 from dateutil import parser
 
 from django.db.models import Q
+from django.http import HttpResponse
 
 from ninja import NinjaAPI
-from ninja.errors import HttpError
+from ninja.errors import HttpError, ValidationError
 
 from main.models import Item
 from main.schemas import ImportSchema, ChildrenSchema, SaleSchema
 from main.services import (
-    _is_date_in_iso8601,
     _save_item,
     _update_parents_date,
     _get_items_and_parents_id
 )
+from main.validators import validate_price, validate_date
 
 api = NinjaAPI()
 
-# TODO обработать 422
+
+@api.exception_handler(ValidationError)
+def validation_errors(request, exc):
+    return HttpResponse('Validation Failed', status_code=400)
 
 
 @api.post("/imports", response={200: str, 400: str})
@@ -29,8 +33,8 @@ def import_data(request, data: ImportSchema):
     items = request_data.get('items')
     date = request_data.get('updateDate')
 
-    if not _is_date_in_iso8601(date):
-        raise HttpError(400, 'Validation error')
+    validate_date(date)
+    validate_price(items)
 
     items_dict = {i['id']: i for i in items}
     items_id, parents_id = _get_items_and_parents_id(items)
@@ -45,8 +49,6 @@ def import_data(request, data: ImportSchema):
         _update_parents_date(parent_id=parent_id, date=date)
 
     return "Success"
-
-# TODO 422 -> 400
 
 
 @api.delete("/delete/{id}", response={200: str, 404: str})
@@ -73,8 +75,7 @@ def nodes(request, id: UUID):
 @api.get('/sales', response=list[SaleSchema])
 def sales(request, date: str):
 
-    if not _is_date_in_iso8601(date):
-        raise HttpError(400, 'Validation error')
+    validate_date(date)
 
     end_date = parser.parse(date)
     start_date = end_date - timedelta(days=10)

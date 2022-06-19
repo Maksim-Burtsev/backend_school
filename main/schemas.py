@@ -4,7 +4,7 @@ from typing import Optional
 
 from ninja import Schema, Field
 
-from main.services import _get_price_of_category
+from main.services import _get_price_and_count_of_category
 
 
 class TypeEnum(str, Enum):
@@ -54,7 +54,7 @@ class ChildrenSchema(Schema):
     def resolve_price(obj):
         if obj._type == 'offer':
             return obj.price
-        res, offers = _get_price_of_category(obj)
+        res, offers = _get_price_and_count_of_category(obj)
         if res == 0:
             return None
         return int(res/offers)
@@ -82,12 +82,12 @@ class SaleSchema(Schema):
     @staticmethod
     def resolve_date(obj):
         return obj.last_update.isoformat()[:-6] + '.000Z'
-
+    
     @staticmethod
     def resolve_price(obj):
         if obj._type == 'offer':
             return obj.price
-        res, offers = _get_price_of_category(obj)
+        res, offers = _get_price_and_count_of_category(obj)
         if res == 0:
             return None
         return int(res/offers)

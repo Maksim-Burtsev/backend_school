@@ -1,4 +1,3 @@
-import re
 from typing import NamedTuple
 from uuid import UUID
 
@@ -47,31 +46,14 @@ def _save_item(item: dict, db_items: dict, date: str, items_dict: dict) -> None:
     item_obj.save()
 
 
-def _is_date_in_iso8601(date: str) -> bool:
-    """
-    Проверяет время на соответствие формату ISO-8601
-    """
-    regex = r'^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]+)?(Z|[+-](?:2[0-3]|[01][0-9]):[0-5][0-9])?$'
-
-    match_iso8601 = re.compile(regex).match
-
-    try:
-        if match_iso8601(date) is not None:
-            return True
-    except:
-        pass
-    return False
-
-
-# TODO rename
-def _get_price_of_category(category_obj: Item) -> PriceCountTuple:
+def _get_price_and_count_of_category(category_obj: Item) -> PriceCountTuple:
     """
     Вычисляет price категории. Рекурсивно обходит все подкатегории.
     """
     res, item_count = 0, 0
     for item in category_obj.offers.all():
         if item._type == "category":
-            sub_res, sub_count = _get_price_of_category(item)
+            sub_res, sub_count = _get_price_and_count_of_category(item)
             res += sub_res
             item_count += sub_count
         else:
