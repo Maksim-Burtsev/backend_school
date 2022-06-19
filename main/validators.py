@@ -5,7 +5,16 @@ from ninja.errors import HttpError
 from main.schemas import TypeEnum
 
 
-def validate_price(items: dict):
+def validate_parent(items: dict) -> None:
+    """
+    Проверяет чтобы id != parentId
+    """
+    res_list = [(item['id'] == item['parentId']) for item in items]
+    if any(res_list):
+        raise HttpError(400, 'Validation error')
+
+
+def validate_price(items: dict) -> None:
     """
     Проверяет чтобы у price категории был null, а товара >=0
     """
