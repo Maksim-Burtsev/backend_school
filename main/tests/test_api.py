@@ -1,3 +1,6 @@
+import uuid
+import json
+
 from django.test import TestCase
 
 from main.models import Item
@@ -140,4 +143,74 @@ class ImportTestCase(TestCase):
 
         self.assertEqual(response.status_code, 400)
 
-    
+
+class APITestCase(TestCase):
+
+    def test_delete(self):
+        Item.objects.create(
+            _type='category',
+            uuid='b1d8fd7d-2ae3-47d5-b2f9-0f094af800d4',
+            name='test',
+            last_update='2022-02-02T12:00:00.000Z'
+        )
+
+        self.assertEqual(Item.objects.count(), 1)
+        _id = 'b1d8fd7d-2ae3-47d5-b2f9-0f094af800d4'
+        response = self.client.delete(f'/delete/{_id}')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Item.objects.count(), 0)
+
+    def test_delete_404(self):
+        pass
+
+    def test_nodes(self):
+        main_cat = Item.objects.create(
+            _type='category',
+            uuid=uuid.uuid4(),
+            name='Main category',
+            last_update='2022-02-02T12:00:00.000Z'
+        )
+
+        for _ in range(3):
+            subcategory = Item.objects.create(
+                _type='category',
+                uuid=uuid.uuid4(),
+                name='test',
+                last_update='2022-02-02T12:00:00.000Z',
+                parent=main_cat
+            )
+
+        for _ in range(3):
+            Item.objects.create(
+            _type='category',
+            uuid=uuid.uuid4(),
+            name='Main category',
+            last_update='2022-02-02T12:00:00.000Z',
+            parent=subcategory
+
+        )
+
+        self.assertEqual(Item.objects.all().count(), 7)
+        
+        response = self.client.get(f'/nodes/{main_cat.uuid}')
+
+        self.assertEqual(response.status_code, 200)
+
+        res = json.loads(response.content)
+        self.assertEqual(len(res['children']), 3)
+
+    def test_nodes_404(self):
+        pass
+
+    def test_nodes_offer_childs(self):
+        pass
+
+    def test_sales(self):
+        pass
+
+    def test_sales_empty(self):
+        pass
+
+    def test_sales_wrong_date(self):
+        pass

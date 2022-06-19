@@ -10,7 +10,7 @@ from ninja import NinjaAPI
 from ninja.errors import HttpError, ValidationError
 
 from main.models import Item
-from main.schemas import ImportSchema, ChildrenSchema, SaleSchema
+from main.schemas import ImportSchema, NodesSchema, SaleSchema
 from main.services import (
     _save_item,
     _update_parents_date,
@@ -62,7 +62,7 @@ def delete_item(request, id: UUID):
         return 200, "Success"
 
 
-@api.get('/nodes/{id}', response=ChildrenSchema)
+@api.get('/nodes/{id}', response=NodesSchema)
 def nodes(request, id: UUID):
     try:
         item_obj = Item.objects.get(uuid=id)
@@ -78,7 +78,7 @@ def sales(request, date: str):
     validate_date(date)
 
     end_date = parser.parse(date)
-    start_date = end_date - timedelta(days=10)
+    start_date = end_date - timedelta(days=1)
 
     items = Item.objects.filter(
         Q(last_update__gte=start_date) & Q(last_update__lte=end_date))

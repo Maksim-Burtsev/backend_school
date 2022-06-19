@@ -20,7 +20,7 @@ class ImportSchema(Schema):
     updateDate: str
 
 
-class ChildrenSchema(Schema):
+class NodesSchema(Schema):
     """
     Схема для /nodes
     """
@@ -30,7 +30,7 @@ class ChildrenSchema(Schema):
     date: str
     type: str
     parentId: UUID = Field(None, alias='parent.uuid')
-    children: list[Optional['ChildrenSchema']] | None
+    children: list[Optional['NodesSchema']] | None
 
     @staticmethod
     def resolve_children(obj):
@@ -59,7 +59,7 @@ class ChildrenSchema(Schema):
         return obj.last_update.isoformat()[:-6] + '.000Z'
 
 
-ChildrenSchema.update_forward_refs()
+NodesSchema.update_forward_refs()
 
 
 class SaleSchema(Schema):
