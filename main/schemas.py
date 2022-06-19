@@ -7,13 +7,8 @@ from ninja import Schema, Field
 from main.services import _get_price_and_count_of_category
 
 
-class TypeEnum(str, Enum):
-    CATEGORY = 'CATEGORY'
-    OFFER = 'OFFER'
-
-
 class ItemSchema(Schema):
-    type: TypeEnum
+    type: str
     id: UUID
     name: str
     parentId: UUID = None
@@ -82,7 +77,7 @@ class SaleSchema(Schema):
     @staticmethod
     def resolve_date(obj):
         return obj.last_update.isoformat()[:-6] + '.000Z'
-    
+
     @staticmethod
     def resolve_price(obj):
         if obj._type == 'offer':

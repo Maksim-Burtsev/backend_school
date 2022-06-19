@@ -16,7 +16,7 @@ from main.services import (
     _update_parents_date,
     _get_items_and_parents_id
 )
-from main.validators import validate_price, validate_date, validate_parent
+from main.validators import validate_items, validate_date
 
 api = NinjaAPI()
 
@@ -34,8 +34,7 @@ def import_data(request, data: ImportSchema):
     date = request_data.get('updateDate')
 
     validate_date(date)
-    validate_price(items)
-    validate_parent(items)
+    validate_items(items)
 
     items_dict = {i['id']: i for i in items}
     items_id, parents_id = _get_items_and_parents_id(items)

@@ -1,8 +1,26 @@
 import re
+from enum import Enum
 
 from ninja.errors import HttpError
 
-from main.schemas import TypeEnum
+
+class TypeEnum(str, Enum):
+    CATEGORY = 'CATEGORY'
+    OFFER = 'OFFER'
+
+def validate_items(items: dict) -> None:
+
+    validate_type(items)
+    validate_price(items)
+    validate_parent(items)
+
+
+def validate_type(items: dict) -> None:
+    types_list = [TypeEnum.CATEGORY, TypeEnum.OFFER]
+    res_list = [(item['type'] in types_list) for item in items]
+
+    if not all(res_list):
+        raise HttpError(400, 'Validation error')
 
 
 def validate_parent(items: dict) -> None:
@@ -20,7 +38,7 @@ def validate_price(items: dict) -> None:
     """
     for item in items:
         if (item['type'] == TypeEnum.CATEGORY and item['price']) or \
-            (item['type'] == TypeEnum.OFFER and item['price']) < 0:
+                (item['type'] == TypeEnum.OFFER and item['price']) < 0:
             raise HttpError(400, 'Validation error')
 
 
