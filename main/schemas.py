@@ -26,6 +26,9 @@ class ImportSchema(Schema):
 
 
 class ChildrenSchema(Schema):
+    """
+    Схема для /nodes
+    """
     name: str
     id: UUID = Field(..., alias='uuid')
     price: int = None
@@ -62,3 +65,29 @@ class ChildrenSchema(Schema):
 
 
 ChildrenSchema.update_forward_refs()
+
+
+class SaleSchema(Schema):
+    id: UUID = Field(..., alias='uuid')
+    name: str
+    parentId: UUID = Field(None, alias='parent.uuid')
+    type: str
+    price: int = None
+    date: str
+
+    @staticmethod
+    def resolve_type(obj):
+        return obj._type.upper()
+
+    @staticmethod
+    def resolve_date(obj):
+        return obj.last_update.isoformat()[:-6] + '.000Z'
+
+    @staticmethod
+    def resolve_price(obj):
+        if obj._type == 'offer':
+            return obj.price
+        res, offers = _get_price_of_category(obj)
+        if res == 0:
+            return None
+        return int(res/offers)
