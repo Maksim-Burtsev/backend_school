@@ -15,13 +15,15 @@ services:
       - ./.env
     depends_on:
       - db
+    restart: always
 
   db:
-    image: postgres:latest  
+    image: postgres:latest
     volumes:
       - ./data/postgres/:/var/lib/postgresql/data/
     env_file:
       - ./.env
+    restart: always
 
 volumes:
   postgres_data:
