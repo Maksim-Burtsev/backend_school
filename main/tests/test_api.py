@@ -1,3 +1,4 @@
+from typing import no_type_check
 import uuid
 import json
 
@@ -183,16 +184,16 @@ class APITestCase(TestCase):
 
         for _ in range(3):
             Item.objects.create(
-            _type='category',
-            uuid=uuid.uuid4(),
-            name='Main category',
-            last_update='2022-02-02T12:00:00.000Z',
-            parent=subcategory
+                _type='category',
+                uuid=uuid.uuid4(),
+                name='Main category',
+                last_update='2022-02-02T12:00:00.000Z',
+                parent=subcategory
 
-        )
+            )
 
         self.assertEqual(Item.objects.all().count(), 7)
-        
+
         response = self.client.get(f'/nodes/{main_cat.uuid}')
 
         self.assertEqual(response.status_code, 200)
@@ -201,16 +202,66 @@ class APITestCase(TestCase):
         self.assertEqual(len(res['children']), 3)
 
     def test_nodes_404(self):
-        pass
+        no_existent_id = uuid.uuid4()
+        response = self.client.get(f'/nodes/{no_existent_id}')
+
+        self.assertEqual(response.status_code, 404)
 
     def test_nodes_offer_childs(self):
-        pass
+        main_cat = Item.objects.create(
+            _type='category',
+            uuid=uuid.uuid4(),
+            name='Main category',
+            last_update='2022-02-02T12:00:00.000Z'
+        )
+        Item.objects.create(
+            _type='category',
+            uuid=uuid.uuid4(),
+            name='test cat',
+            last_update='2022-02-02T12:00:00.000Z',
+            parent=main_cat
+        )
+        Item.objects.create(
+            _type='offer',
+            uuid=uuid.uuid4(),
+            name='test offer',
+            last_update='2022-02-02T12:00:00.000Z',
+            parent=main_cat
+        )
+
+        response = self.client.get(f'/nodes/{main_cat.uuid}')
+
+        self.assertEqual(response.status_code, 200)
+
+        res = json.loads(response.content)
+        cat = res['children'][0]
+        offer = res['children'][1]
+
+        self.assertEqual(cat['children'], [])
+        self.assertEqual(offer['children'], None)
 
     def test_sales(self):
-        pass
+        self.client.post(
+            '/imports', data=data, content_type='application/json')
+        date = '2022-02-02T12:00:00.000Z'
+        response = self.client.get(f'/sales?date={date}')
+
+        self.assertEqual(response.status_code, 200)
+
+        res = json.loads(response.content)
+        self.assertEqual(len(res), 3)
 
     def test_sales_empty(self):
-        pass
+        date = '2022-02-22T12:00:00.000Z'
+        response = self.client.get(f'/sales?date={date}')
+
+        self.assertEqual(response.status_code, 200)
+
+        res = json.loads(response.content)
+        self.assertEqual(len(res), 0)
 
     def test_sales_wrong_date(self):
-        pass
+        date = '11:11:1111'
+        response = self.client.get(f'/sales?date={date}')
+
+        self.assertEqual(response.status_code, 400)
