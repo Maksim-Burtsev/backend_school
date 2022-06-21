@@ -16,7 +16,7 @@ from main.services import (
     _update_parents_date,
     _get_items_and_parents_id
 )
-from main.validators import validate_items, validate_date
+from main.validators import validate_items, validate_date, validate_id
 
 api = NinjaAPI()
 
@@ -63,7 +63,9 @@ def delete_item(request, id: UUID):
 
 
 @api.get('/nodes/{id}', response=NodesSchema)
-def nodes(request, id: UUID):
+def nodes(request, id: str):
+    validate_id(id)
+
     try:
         item_obj = Item.objects.get(uuid=id)
     except Item.DoesNotExist:

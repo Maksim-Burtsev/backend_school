@@ -1,5 +1,6 @@
 import re
 from enum import Enum
+from uuid import UUID
 
 from ninja.errors import HttpError
 
@@ -7,6 +8,12 @@ from ninja.errors import HttpError
 class TypeEnum(str, Enum):
     CATEGORY = 'CATEGORY'
     OFFER = 'OFFER'
+
+def validate_id(_id: str)-> None:
+    try:
+        _id = UUID(_id)
+    except:
+        raise HttpError(400, 'Validation error')
 
 def validate_items(items: dict) -> None:
 
