@@ -3,10 +3,11 @@ from typing import Optional
 
 from ninja import Schema, Field
 
-from main.services import _get_price_and_count_of_category
+from main.services import get_children, get_price
 
 
 class ItemSchema(Schema):
+    """Схема объекта Item"""
     type: str
     id: UUID
     name: str
@@ -15,6 +16,7 @@ class ItemSchema(Schema):
 
 
 class ImportSchema(Schema):
+    """Схема для /import"""
     items: list[ItemSchema]
     updateDate: str
 
@@ -33,12 +35,8 @@ class NodesSchema(Schema):
 
     @staticmethod
     def resolve_children(obj):
-        children = obj.offers.all()
-        if children:
-            return children
-        if obj._type == 'category':
-            return []
-        return None
+        children = get_children(obj)
+        return children
 
     @staticmethod
     def resolve_type(obj):
@@ -46,12 +44,8 @@ class NodesSchema(Schema):
 
     @staticmethod
     def resolve_price(obj):
-        if obj._type == 'offer':
-            return obj.price
-        res, offers = _get_price_and_count_of_category(obj)
-        if res == 0:
-            return None
-        return int(res/offers)
+        price = get_price(obj)
+        return price
 
     @staticmethod
     def resolve_date(obj):
@@ -62,6 +56,7 @@ NodesSchema.update_forward_refs()
 
 
 class SaleSchema(Schema):
+    """Схема для /sales"""
     id: UUID = Field(..., alias='uuid')
     name: str
     parentId: UUID = Field(None, alias='parent.uuid')
@@ -79,9 +74,5 @@ class SaleSchema(Schema):
 
     @staticmethod
     def resolve_price(obj):
-        if obj._type == 'offer':
-            return obj.price
-        res, offers = _get_price_and_count_of_category(obj)
-        if res == 0:
-            return None
-        return int(res/offers)
+        price = get_price(obj)
+        return price

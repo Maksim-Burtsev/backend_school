@@ -2,7 +2,7 @@ from django.db import models
 
 
 class Item(models.Model):
-    """Категория"""
+    """Товар/категория"""
 
     TYPE_CHOICES = (
         ('offer', 'OFFER'),

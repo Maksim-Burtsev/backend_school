@@ -14,6 +14,26 @@ class ItemsParentsTuple(NamedTuple):
     parentd_id: list[UUID]
 
 
+def get_children(obj) -> list[Item] | list | None:
+    """Возващает список всех подкатегорий или пустое значение"""
+    children = obj.offers.all()
+    if children:
+        return children
+    if obj._type == 'category':
+        return []
+    return None    
+
+
+def get_price(obj) -> None | int:
+    """Возвращает price объекта или категории"""
+    if obj._type == 'offer':
+        return obj.price
+    res, offers = _get_price_and_count_of_category(obj)
+    if res == 0:
+        return None
+    return int(res/offers)
+
+
 def _save_item(item: dict, db_items: dict, date: str, items_dict: dict) -> None:
     """
     Создаёт/обновляет объект в базе данных 
