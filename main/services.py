@@ -14,17 +14,22 @@ class ItemsParentsTuple(NamedTuple):
     parentd_id: list[UUID]
 
 
-def get_children(obj) -> list[Item] | list | None:
+def get_date_in_iso(obj: Item) -> str:
+    """Возвращает дату объекта в ISO-8601"""
+    return obj.last_update.isoformat()[:-6] + '.000Z'
+
+
+def get_children(obj: Item) -> list[Item] | list | None:
     """Возващает список всех подкатегорий или пустое значение"""
     children = obj.offers.all()
     if children:
         return children
     if obj._type == 'category':
         return []
-    return None    
+    return None
 
 
-def get_price(obj) -> None | int:
+def get_price(obj: Item) -> None | int:
     """Возвращает price объекта или категории"""
     if obj._type == 'offer':
         return obj.price
@@ -85,7 +90,7 @@ def _get_price_and_count_of_category(category_obj: Item) -> PriceCountTuple:
 
 def _update_parents_date(parent_id: UUID, date: str) -> None:
     """
-    Обновляет дату у всех родителей
+    Обновляет дату последнего обновления у всех родителей
     """
 
     item_obj = Item.objects.get(uuid=parent_id)

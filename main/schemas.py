@@ -3,7 +3,7 @@ from typing import Optional
 
 from ninja import Schema, Field
 
-from main.services import get_children, get_price
+from main.services import get_children, get_price, get_date_in_iso
 
 
 class ItemSchema(Schema):
@@ -49,8 +49,7 @@ class NodesSchema(Schema):
 
     @staticmethod
     def resolve_date(obj):
-        return obj.last_update.isoformat()[:-6] + '.000Z'
-
+        return get_date_in_iso(obj)
 
 NodesSchema.update_forward_refs()
 
@@ -70,9 +69,23 @@ class SaleSchema(Schema):
 
     @staticmethod
     def resolve_date(obj):
-        return obj.last_update.isoformat()[:-6] + '.000Z'
+        return get_date_in_iso(obj)
 
     @staticmethod
     def resolve_price(obj):
         price = get_price(obj)
         return price
+
+
+class ItemStaticticSchema(Schema):
+    """Схема для /node/{id}/statistic"""
+    id: UUID = Field(..., alias='uuid')
+    name: str
+    parentId: UUID = None
+    type: str = Field(..., alias='_type')
+    price: int = None
+    date: str
+
+    @staticmethod
+    def resolve_date(obj):
+        return get_date_in_iso(obj)

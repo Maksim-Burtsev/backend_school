@@ -9,13 +9,19 @@ from django.http import HttpResponse
 from ninja import NinjaAPI
 from ninja.errors import HttpError, ValidationError
 
-from main.models import Item
-from main.schemas import ImportSchema, NodesSchema, SaleSchema
+from main.models import Item, ItemHistory
+from main.schemas import (
+    ImportSchema,
+    NodesSchema,
+    SaleSchema,
+    ItemStaticticSchema,
+)
 from main.services import (
     _save_item,
     _update_parents_date,
-    _get_items_and_parents_id
+    _get_items_and_parents_id,
 )
+from main.tasks import _save_items_in_history
 from main.validators import validate_items, validate_date, validate_id
 
 api = NinjaAPI()
@@ -48,6 +54,12 @@ def import_data(request, data: ImportSchema):
     for parent_id in parents_id:
         _update_parents_date(parent_id=parent_id, date=date)
 
+    _save_items_in_history(
+        items=Item.objects.filter(last_update=date), date=date)
+
+    # TODO
+    # создание celery + redis делают
+
     return "Success"
 
 
@@ -65,7 +77,6 @@ def delete_item(request, id: UUID):
 @api.get('/nodes/{id}', response=NodesSchema)
 def nodes(request, id: str):
     validate_id(id)
-
     try:
         item_obj = Item.objects.get(uuid=id)
     except Item.DoesNotExist:
@@ -86,3 +97,24 @@ def sales(request, date: str):
         Q(last_update__gte=start_date) & Q(last_update__lte=end_date))
 
     return items
+
+
+@api.get('/node/{id}/statistic', response=list[ItemStaticticSchema])
+def statistic(request, id: UUID, dateStart: str = None, dateEnd: str = None):
+
+    try:
+        item = Item.objects.get(uuid=id)
+    except Item.DoesNotExist:
+        raise HttpError(404, 'Item not found')
+
+    item_history = ItemHistory.objects.filter(item=item)
+
+    if dateStart:
+        validate_date(dateStart)
+        item_history = item_history.filter(last_update__gte=dateStart)
+
+    if dateEnd:
+        validate_date(dateEnd)
+        item_history = item_history.filter(last_update__lte=dateEnd)
+
+    return item_history
