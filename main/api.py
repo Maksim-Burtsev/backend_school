@@ -54,11 +54,7 @@ def import_data(request, data: ImportSchema):
     for parent_id in parents_id:
         _update_parents_date(parent_id=parent_id, date=date)
 
-    _save_items_in_history(
-        items=Item.objects.filter(last_update=date), date=date)
-
-    # TODO
-    # создание celery + redis делают
+    _save_items_in_history.delay(date)
 
     return "Success"
 
