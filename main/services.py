@@ -55,8 +55,6 @@ def _save_item(item: dict, db_items: dict, date: str, items_dict: dict) -> None:
     if item['parentId']:
         if db_items.filter(uuid=item['parentId']).exists():
             parent_obj = db_items.get(uuid=item['parentId'])
-            parent_obj.last_update = date
-            parent_obj.save()
             item_obj.parent = parent_obj
         else:
             parent_data = items_dict[item['parentId']]
