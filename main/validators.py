@@ -9,20 +9,28 @@ class TypeEnum(str, Enum):
     CATEGORY = 'CATEGORY'
     OFFER = 'OFFER'
 
-def validate_id(_id: str)-> None:
+
+def validate_id(_id: str) -> None:
+    """
+    Валидирует id объекта (проверка на UUID)
+    """
     try:
         _id = UUID(_id)
     except:
         raise HttpError(400, 'Validation error')
 
-def validate_items(items: dict) -> None:
 
+def validate_items(items: dict) -> None:
+    """
+    Валидирует type/price/parentId у списка элементов
+    """
     validate_type(items)
     validate_price(items)
     validate_parent(items)
 
 
 def validate_type(items: dict) -> None:
+    """Проверка type на принадлежность CATEGORY или OFFER"""
     types_list = [TypeEnum.CATEGORY, TypeEnum.OFFER]
     res_list = [(item['type'] in types_list) for item in items]
 

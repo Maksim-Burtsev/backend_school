@@ -1,9 +1,9 @@
 import uuid
 import json
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
-from main.models import Item
+from main.models import Item, ItemHistory
 
 
 data = {
@@ -264,3 +264,103 @@ class APITestCase(TestCase):
         response = self.client.get(f'/sales?date={date}')
 
         self.assertEqual(response.status_code, 400)
+
+    @override_settings(CELERY_TASK_ALWAYS_EAGER=True, CELERY_TASK_EAGER_PROPOGATES=True)
+    def test_import_save_history(self):
+        response = self.client.post(
+            '/imports', data=data, content_type='application/json')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ItemHistory.objects.all().count(), 3)
+
+
+class StatisticTestCase(TestCase):
+
+    @override_settings(CELERY_TASK_ALWAYS_EAGER=True, CELERY_TASK_EAGER_PROPOGATES=True)
+    def setUp(self) -> None:
+        response = self.client.post(
+            '/imports', data=data, content_type='application/json')
+
+        self._id = 'd515e43f-f3f6-4471-bb77-6b455017a2d2'
+
+    def test_import_save_history(self):
+        self.assertEqual(ItemHistory.objects.all().count(), 3)
+
+    def test_statistic_without_date(self):
+        response = self.client.get(f'/node/{self._id}/statistic')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), [{
+            'id': 'd515e43f-f3f6-4471-bb77-6b455017a2d2',
+            'name': 'Смартфоны',
+            'parentId': None,
+            'type': 'category',
+            'price': 69999,
+            'date': '2022-02-02T12:00:00.000Z'}])
+
+    @override_settings(CELERY_TASK_ALWAYS_EAGER=True, CELERY_TASK_EAGER_PROPOGATES=True)
+    def test_statistic_with_couple_updates(self):
+        """Обновляем элемент -> смотрим историю изменений"""
+        data = {"items": [
+            {
+                "type": "CATEGORY",
+                "name": "Смартфоны",
+                "id": "d515e43f-f3f6-4471-bb77-6b455017a2d2",
+                "parentId": None,
+            },
+        ],
+            "updateDate": "2222-02-22T22:22:22.000Z"  
+        }
+        response = self.client.post(
+            '/imports', data=data, content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get(f'/node/{self._id}/statistic')
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(response.json(), [{'id': 'd515e43f-f3f6-4471-bb77-6b455017a2d2', 'name': 'Смартфоны', 'parentId': None, 'type': 'category', 'price': 69999, 'date': '2022-02-02T12:00:00.000Z'}, {'id': 'd515e43f-f3f6-4471-bb77-6b455017a2d2', 'name': 'Смартфоны', 'parentId': None, 'type': 'category', 'price': 69999, 'date': '2222-02-22T22:22:22.000Z'}])
+
+    def test_statistic_with_wrong_date(self):
+        wrong_date = '2022:07:07 11:11'
+        response = self.client.get(
+            f'/node/{self._id}/statistic?dateStart={wrong_date}')
+        
+        self.assertEqual(response.status_code, 400)
+
+    def test_statistic_not_found(self):
+        wrong_id = '069cb8d7-bbdd-47d3-ad8f-82ef4c269df1'
+        response = self.client.get(f'/node/{wrong_id}/statistic')
+        self.assertEqual(response.status_code, 404)
+
+    def test_statistic_with_dates(self):
+        dateStart = '2022-02-02T12:00:00.000Z'
+        dateEnd = '2022-11-11T12:00:00.000Z'
+
+        response = self.client.get(f'/node/{self._id}/statistic?dateStart={dateStart}&dateEnd={dateEnd}')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+        
+    @override_settings(CELERY_TASK_ALWAYS_EAGER=True, CELERY_TASK_EAGER_PROPOGATES=True)
+    def test_statistic_with_update_cat_by_offer(self):
+        """Обновляем элемент -> смотрим историю изменений его категории"""
+
+        data = {"items": [
+            {
+                "type": "OFFER",
+                "name": "New name",
+                "id": "863e1a7a-1304-42ae-943b-179184c077e3",
+                "parentId": "d515e43f-f3f6-4471-bb77-6b455017a2d2",
+                "price": 7777777,
+            }, ],
+            "updateDate": "2202-08-16T12:00:00.000Z"
+        }
+        response = self.client.post(
+            '/imports', data=data, content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get(f'/node/{self._id}/statistic')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 2)
+        self.assertEqual(response.json()[1]['price'], 3918888)
+
+
+# debug toolbar (если что не заведётся сразу к сеньору помидору)
