@@ -14,19 +14,55 @@ class ItemsParentsTuple(NamedTuple):
     parentd_id: list[UUID]
 
 
+def _set_item_price_and_childrens(item: Item, descendants: list[Item]):
+    item.children = []
+    count, price = 0, 0
+    for i in descendants:
+        if i.parent == item:
+            item.children.append(i)
+        if i._type == 'offer':
+            count += 1
+            price += i.price
+    item.price = int(price/count) if count > 0 else None
+
+def _set_children_for_descendants(descendants: list[Item]):
+    """Добавляет атрибут .children к каждому потомку, в котором содержатся дочерние объекты"""
+    for descendant in descendants:
+        if descendant._type == 'offer':
+            descendant.children = None
+            continue
+        descendant.children = [j for j in descendants if j.parent==descendant]
+
+
+
+def _set_price_for_descendants_cats(descendants: list[Item]) -> None:
+    """Вычисляет стоимость для всех категорий среди потомков и добавляет её в качестве атрибута .price"""
+    for i in descendants:
+        if i._type == 'category':
+            cat_items = _get_cat_items(i)
+            price, count = 0, 0
+            for j in cat_items:
+                price += j.price
+                count += 1
+            i.price = int(price/count) if count != 0 else None
+
+
+def _get_cat_items(cat_obj: Item) -> list[Item | None]:
+    """Возвращает список всех товаров, которые являются потомками данной категории"""
+
+    items_list = []
+    for child in cat_obj.children:
+        if child._type == 'category':
+            items_list.extend(_get_cat_items(child))
+        else:
+            items_list.append(child)
+
+    return items_list
+
+
 def get_date_in_iso(obj: Item) -> str:
     """Возвращает дату объекта в ISO-8601"""
     return obj.last_update.isoformat()[:-6] + '.000Z'
-
-
-def get_children(obj: Item) -> list[Item] | list | None:
-    """Возващает список всех подкатегорий или пустое значение"""
-    children = obj.offers.all()
-    if children:
-        return children
-    if obj._type == 'category':
-        return []
-    return None
 
 
 def get_price(obj: Item) -> None | int:

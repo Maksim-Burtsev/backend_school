@@ -3,7 +3,7 @@ from typing import Optional
 
 from ninja import Schema, Field
 
-from main.services import get_children, get_price, get_date_in_iso
+from main.services import get_price, get_date_in_iso
 
 
 class ItemSchema(Schema):
@@ -33,6 +33,7 @@ class NodesSchema(Schema):
     parentId: UUID = Field(None, alias='parent.uuid')
     children: list[Optional['NodesSchema']] | None
 
+
     @staticmethod
     def resolve_children(obj):
         return obj.children
@@ -40,11 +41,6 @@ class NodesSchema(Schema):
     @staticmethod
     def resolve_type(obj):
         return obj._type.upper()
-
-    @staticmethod
-    def resolve_price(obj):
-        price = get_price(obj)
-        return price
 
     @staticmethod
     def resolve_date(obj):

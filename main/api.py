@@ -20,6 +20,9 @@ from main.services import (
     _save_item,
     _update_parents_date,
     _get_items_and_parents_id,
+    _set_item_price_and_childrens,
+    _set_children_for_descendants,
+    _set_price_for_descendants_cats
 )
 from main.tasks import _save_items_in_history
 from main.validators import validate_items, validate_date, validate_id
@@ -79,18 +82,12 @@ def nodes(request, id: str):
         raise HttpError(404, 'Item not found')
 
     descendants = item.get_descendants()
-    for i in descendants:
-        if i._type == 'offer':
-            i.children = None
-            continue
-        i.children = [j for j in descendants if j.parent==i]
 
-    item.children = []
-    for i in descendants:
-        if i.parent == item:
-            item.children.append(i)
+    _set_children_for_descendants(descendants)
+    _set_price_for_descendants_cats(descendants)
+    _set_item_price_and_childrens(item, descendants)
 
-    return item
+    return item 
 
 
 @api.get('/sales', response=list[SaleSchema])
