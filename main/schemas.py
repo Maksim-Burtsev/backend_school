@@ -35,8 +35,7 @@ class NodesSchema(Schema):
 
     @staticmethod
     def resolve_children(obj):
-        children = get_children(obj)
-        return children
+        return obj.children
 
     @staticmethod
     def resolve_type(obj):
@@ -50,6 +49,7 @@ class NodesSchema(Schema):
     @staticmethod
     def resolve_date(obj):
         return get_date_in_iso(obj)
+
 
 NodesSchema.update_forward_refs()
 

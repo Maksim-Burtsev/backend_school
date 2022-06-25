@@ -1,7 +1,9 @@
 from django.db import models
 
+from mptt.models import MPTTModel, TreeForeignKey
 
-class Item(models.Model):
+
+class Item(MPTTModel):
     """Товар/категория"""
 
     TYPE_CHOICES = (
@@ -11,8 +13,8 @@ class Item(models.Model):
 
     _type = models.CharField(max_length=21, choices=TYPE_CHOICES)
     uuid = models.UUIDField(unique=True)
-    parent = models.ForeignKey('self', null=True,
-                               blank=True, on_delete=models.CASCADE, related_name='offers')
+    parent = TreeForeignKey('self', null=True,
+                               blank=True, on_delete=models.CASCADE, related_name='offers', default=None)
     name = models.CharField(max_length=255)
     price = models.IntegerField(null=True, default=None, blank=True)
     last_update = models.DateTimeField(blank=True, null=True)

@@ -74,11 +74,23 @@ def delete_item(request, id: UUID):
 def nodes(request, id: str):
     validate_id(id)
     try:
-        item_obj = Item.objects.get(uuid=id)
+        item = Item.objects.get(uuid=id)
     except Item.DoesNotExist:
         raise HttpError(404, 'Item not found')
 
-    return item_obj
+    descendants = item.get_descendants()
+    for i in descendants:
+        if i._type == 'offer':
+            i.children = None
+            continue
+        i.children = [j for j in descendants if j.parent==i]
+
+    item.children = []
+    for i in descendants:
+        if i.parent == item:
+            item.children.append(i)
+
+    return item
 
 
 @api.get('/sales', response=list[SaleSchema])
