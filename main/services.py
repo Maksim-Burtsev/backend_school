@@ -15,6 +15,11 @@ class ItemsParentsTuple(NamedTuple):
 
 
 def _set_item_price_and_childrens(item: Item, descendants: list[Item]):
+    """
+    Добавляет объекту атрибуты .children и .price
+
+    Значение каждого из них вычисляется в результате обхода списка потомков
+    """
     item.children = []
     count, price = 0, 0
     for i in descendants:
@@ -25,14 +30,15 @@ def _set_item_price_and_childrens(item: Item, descendants: list[Item]):
             price += i.price
     item.price = int(price/count) if count > 0 else None
 
+
 def _set_children_for_descendants(descendants: list[Item]):
     """Добавляет атрибут .children к каждому потомку, в котором содержатся дочерние объекты"""
     for descendant in descendants:
         if descendant._type == 'offer':
             descendant.children = None
             continue
-        descendant.children = [j for j in descendants if j.parent==descendant]
-
+        descendant.children = [
+            j for j in descendants if j.parent == descendant]
 
 
 def _set_price_for_descendants_cats(descendants: list[Item]) -> None:

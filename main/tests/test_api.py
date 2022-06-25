@@ -53,7 +53,7 @@ class ImportTestCase(TestCase):
                 "updateDate": "2022-02-02T12:00:00.000Z"
                 }
 
-        # снаружи это 400
+#         # снаружи это 400
         with self.assertRaises(TypeError):
             response = self.client.post(
                 '/imports', data=data, content_type='application/json')
@@ -225,7 +225,8 @@ class APITestCase(TestCase):
             uuid=uuid.uuid4(),
             name='test offer',
             last_update='2022-02-02T12:00:00.000Z',
-            parent=main_cat
+            parent=main_cat,
+            price=1234567,
         )
 
         response = self.client.get(f'/nodes/{main_cat.uuid}')
@@ -361,6 +362,3 @@ class StatisticTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 2)
         self.assertEqual(response.json()[1]['price'], 3918888)
-
-
-# debug toolbar (если что не заведётся сразу к сеньору помидору)

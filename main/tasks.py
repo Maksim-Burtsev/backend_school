@@ -12,6 +12,7 @@ def _save_items_in_history(date: str) -> None:
     items_history = []
     for item in items:
         if item._type == 'category':
+            #TODO get_price by three info
             item.price = get_price(item)
         items_history.append(ItemHistory(
             item=item,

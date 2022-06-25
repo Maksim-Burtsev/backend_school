@@ -33,11 +33,6 @@ class NodesSchema(Schema):
     parentId: UUID = Field(None, alias='parent.uuid')
     children: list[Optional['NodesSchema']] | None
 
-
-    @staticmethod
-    def resolve_children(obj):
-        return obj.children
-
     @staticmethod
     def resolve_type(obj):
         return obj._type.upper()
