@@ -81,7 +81,7 @@ def nodes(request, id: str):
     except Item.DoesNotExist:
         raise HttpError(404, 'Item not found')
 
-    descendants = item.get_descendants()
+    descendants = item.get_descendants().select_related('parent')
 
     _set_children_for_descendants(descendants)
     _set_price_for_descendants_cats(descendants)
@@ -99,7 +99,7 @@ def sales(request, date: str):
     start_date = end_date - timedelta(days=1)
 
     items = Item.objects.filter(
-        Q(last_update__gte=start_date) & Q(last_update__lte=end_date))
+        Q(last_update__gte=start_date) & Q(last_update__lte=end_date)).select_related('parent')
 
     return items
 
