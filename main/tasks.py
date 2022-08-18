@@ -5,14 +5,13 @@ from main.services import get_price
 
 
 @shared_task
-def _save_items_in_history(date: str) -> None:
+def save_items_in_history(date: str) -> None:
     """Сохраняет состояние элементов в ItemsHistory"""
     items = Item.objects.filter(last_update=date)
 
     items_history = []
     for item in items:
         if item._type == "category":
-            # TODO get_price by three info
             item.price = get_price(item)
         items_history.append(
             ItemHistory(

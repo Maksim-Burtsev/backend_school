@@ -22,7 +22,7 @@ from main.services import (
     get_items_and_parents_id,
     set_price_and_childrens,
 )
-from main.tasks import _save_items_in_history
+from main.tasks import save_items_in_history
 from main.validators import validate_items, validate_date, validate_id
 
 api = NinjaAPI()
@@ -53,7 +53,7 @@ def import_data(request, data: ImportSchema):
 
     update_categories_date(parents_id, date)
 
-    _save_items_in_history.delay(date)
+    save_items_in_history.delay(date)
 
     return "Success"
 

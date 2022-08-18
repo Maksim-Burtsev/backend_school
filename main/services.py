@@ -4,14 +4,24 @@ from uuid import UUID
 from main.models import Item
 
 
-class PriceCountTuple(NamedTuple):
-    price: int
-    count: int
-
-
 class ItemsParentsTuple(NamedTuple):
     items_id: list[UUID]
     parentd_id: list[UUID]
+
+
+def get_price(item: Item):
+    """Возвращает стоимость объекта. Если это категория, то возвращает среднюю стоимость среди всех потомков"""
+    if item._type == "offer":
+        return item.price
+
+    total, count = 0, 0
+    descendants = item.get_descendants().select_related("parent")
+    for descendant in descendants:
+        if descendant.price:
+            total += descendant.price
+            count += 1
+
+    return None if total == 0 else int(total / count)
 
 
 def set_price_and_childrens(item: Item, descendants: list[Item]):
@@ -78,16 +88,6 @@ def get_date_in_iso(obj: Item) -> str:
     return obj.last_update.isoformat()[:-6] + ".000Z"
 
 
-def get_price(obj: Item) -> None | int:
-    """Возвращает price объекта или категории"""
-    if obj._type == "offer":
-        return obj.price
-    res, offers = _get_price_and_count_of_category(obj)
-    if res == 0:
-        return None
-    return int(res / offers)
-
-
 def save_item(item: dict, db_items: dict, date: str, items_dict: dict) -> None:
     """
     Создаёт/обновляет объект в базе данных
@@ -116,23 +116,6 @@ def save_item(item: dict, db_items: dict, date: str, items_dict: dict) -> None:
             item_obj.parent = parent_obj
 
     item_obj.save()
-
-
-def _get_price_and_count_of_category(category_obj: Item) -> PriceCountTuple:
-    """
-    Вычисляет price категории. Рекурсивно обходит все подкатегории.
-    """
-    res, item_count = 0, 0
-    for item in category_obj.offers.all():
-        if item._type == "category":
-            sub_res, sub_count = _get_price_and_count_of_category(item)
-            res += sub_res
-            item_count += sub_count
-        else:
-            if item.price:
-                res += item.price
-                item_count += 1
-    return PriceCountTuple(price=res, count=item_count)
 
 
 def update_categories_date(parents_id: list[UUID], date) -> None:
