@@ -17,12 +17,12 @@ from main.schemas import (
     ItemStaticticSchema,
 )
 from main.services import (
-    _save_item,
-    _update_parents_date,
-    _get_items_and_parents_id,
-    _set_item_price_and_childrens,
-    _set_children_for_descendants,
-    _set_price_for_descendants_cats,
+    save_item,
+    update_categories_date,
+    get_items_and_parents_id,
+    set_item_price_and_childrens,
+    set_children_for_descendants,
+    set_price_for_descendants_cats,
 )
 from main.tasks import _save_items_in_history
 from main.validators import validate_items, validate_date, validate_id
@@ -46,15 +46,14 @@ def import_data(request, data: ImportSchema):
     validate_items(items)
 
     items_dict = {i["id"]: i for i in items}
-    items_id, parents_id = _get_items_and_parents_id(items)
+    items_id, parents_id = get_items_and_parents_id(items)
 
     db_items = Item.objects.filter(uuid__in=items_id)
 
     for item in items:
-        _save_item(item=item, db_items=db_items, date=date, items_dict=items_dict)
+        save_item(item=item, db_items=db_items, date=date, items_dict=items_dict)
 
-    for parent_id in parents_id:
-        _update_parents_date(parent_id=parent_id, date=date)
+    update_categories_date(parents_id, date)
 
     _save_items_in_history.delay(date)
 
@@ -82,9 +81,10 @@ def nodes(request, id: str):
 
     descendants = item.get_descendants().select_related("parent")
 
-    _set_children_for_descendants(descendants)
-    _set_price_for_descendants_cats(descendants)
-    _set_item_price_and_childrens(item, descendants)
+    #TODO make this in one func
+    set_children_for_descendants(descendants)
+    set_price_for_descendants_cats(descendants)
+    set_item_price_and_childrens(item, descendants)
 
     return item
 

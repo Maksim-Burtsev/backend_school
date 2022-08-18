@@ -14,7 +14,7 @@ class ItemsParentsTuple(NamedTuple):
     parentd_id: list[UUID]
 
 
-def _set_item_price_and_childrens(item: Item, descendants: list[Item]):
+def set_item_price_and_childrens(item: Item, descendants: list[Item]):
     """
     Добавляет объекту атрибуты .children и .price
 
@@ -31,7 +31,7 @@ def _set_item_price_and_childrens(item: Item, descendants: list[Item]):
     item.price = int(price / count) if count > 0 else None
 
 
-def _set_children_for_descendants(descendants: list[Item]):
+def set_children_for_descendants(descendants: list[Item]):
     """Добавляет атрибут .children к каждому потомку, в котором содержатся дочерние объекты"""
     for descendant in descendants:
         if descendant._type == "offer":
@@ -40,7 +40,7 @@ def _set_children_for_descendants(descendants: list[Item]):
         descendant.children = [j for j in descendants if j.parent == descendant]
 
 
-def _set_price_for_descendants_cats(descendants: list[Item]) -> None:
+def set_price_for_descendants_cats(descendants: list[Item]) -> None:
     """Вычисляет стоимость для всех категорий среди потомков и добавляет её в качестве атрибута .price"""
     for i in descendants:
         if i._type == "category":
@@ -80,7 +80,7 @@ def get_price(obj: Item) -> None | int:
     return int(res / offers)
 
 
-def _save_item(item: dict, db_items: dict, date: str, items_dict: dict) -> None:
+def save_item(item: dict, db_items: dict, date: str, items_dict: dict) -> None:
     """
     Создаёт/обновляет объект в базе данных
 
@@ -127,19 +127,29 @@ def _get_price_and_count_of_category(category_obj: Item) -> PriceCountTuple:
     return PriceCountTuple(price=res, count=item_count)
 
 
-def _update_parents_date(parent_id: UUID, date: str) -> None:
+def update_categories_date(parents_id: list[UUID], date) -> None:
+    """Обновляет дату последнего обновления у всех категорий и их родителей (до самого корня дерева)"""
+    categories = Item.objects.filter(uuid__in=parents_id)
+    categories.update(last_update=date)
+
+    categories_parents = [category.parent.uuid for category in categories if category.parent]
+    for parent_id in categories_parents:
+        _update_parent_date(parent_id, date)
+
+
+def _update_parent_date(parent_id: UUID, date: str) -> None:
     """
-    Обновляет дату последнего обновления у всех родителей
+    Рекурсивно обходит всех родителей категории до корня и обновляет у них дату
     """
 
     item_obj = Item.objects.get(uuid=parent_id)
     item_obj.last_update = date
     item_obj.save()
     if item_obj.parent:
-        _update_parents_date(item_obj.parent.uuid, date)
+        _update_parent_date(item_obj.parent.uuid, date)
 
 
-def _get_items_and_parents_id(items: dict) -> ItemsParentsTuple:
+def get_items_and_parents_id(items: dict) -> ItemsParentsTuple:
     """
     Формирует на основе входных данных два списка: id всех элементов и id родителей
     """

@@ -3,25 +3,6 @@
     {
       "children": [
         {
-          "children": [
-            {
-              "children": null,
-              "date": "2022-06-25T11:04:39.000Z",
-              "id": "cebda6b9-d89f-415d-8a3b-0eef95be26bf",
-              "name": "REFUSE TO QUIT",
-              "parentId": "34bd0eb7-fd8f-4c44-95ad-d13c08dbde0a",
-              "price": 7777777,
-              "type": "OFFER"
-            }
-          ],
-          "date": "2022-06-25T11:04:07.000Z",
-          "id": "34bd0eb7-fd8f-4c44-95ad-d13c08dbde0a",
-          "name": "NEVER GIVE UP",
-          "parentId": "1cc0129a-2bfe-474c-9ee6-d435bf5fc8f2",
-          "price": 7777777,
-          "type": "CATEGORY"
-        },
-        {
           "children": null,
           "date": "2022-02-03T15:00:00.000Z",
           "id": "73bc3b36-02d1-4245-ab35-3106c9ee1c65",
@@ -49,11 +30,11 @@
           "type": "OFFER"
         }
       ],
-      "date": "2022-02-03T15:00:00.000Z",
+      "date": "2022-02-03T12:00:00.000Z",
       "id": "1cc0129a-2bfe-474c-9ee6-d435bf5fc8f2",
       "name": "Телевизоры",
       "parentId": "069cb8d7-bbdd-47d3-ad8f-82ef4c269df1",
-      "price": 1982693,
+      "price": 50999,
       "type": "CATEGORY"
     },
     {
@@ -85,10 +66,10 @@
       "type": "CATEGORY"
     }
   ],
-  "date": "2022-02-03T15:00:00.000Z",
+  "date": "2022-02-01T12:00:00.000Z",
   "id": "069cb8d7-bbdd-47d3-ad8f-82ef4c269df1",
   "name": "Товары",
   "parentId": null,
-  "price": 1345128,
+  "price": 58599,
   "type": "CATEGORY"
 }
