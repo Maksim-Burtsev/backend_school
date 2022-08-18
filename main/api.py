@@ -20,9 +20,7 @@ from main.services import (
     save_item,
     update_categories_date,
     get_items_and_parents_id,
-    set_item_price_and_childrens,
-    set_children_for_descendants,
-    set_price_for_descendants_cats,
+    set_price_and_childrens,
 )
 from main.tasks import _save_items_in_history
 from main.validators import validate_items, validate_date, validate_id
@@ -81,10 +79,7 @@ def nodes(request, id: str):
 
     descendants = item.get_descendants().select_related("parent")
 
-    #TODO make this in one func
-    set_children_for_descendants(descendants)
-    set_price_for_descendants_cats(descendants)
-    set_item_price_and_childrens(item, descendants)
+    set_price_and_childrens(item, descendants)
 
     return item
 

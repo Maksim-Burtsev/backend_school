@@ -14,6 +14,14 @@ class ItemsParentsTuple(NamedTuple):
     parentd_id: list[UUID]
 
 
+def set_price_and_childrens(item: Item, descendants: list[Item]):
+    """Находит стоимость категории и всех её потомков, а после добавляет их в качестве свойств объекта"""
+
+    set_children_for_descendants(descendants)
+    set_price_for_descendants_cats(descendants)
+    set_item_price_and_childrens(item, descendants)
+
+
 def set_item_price_and_childrens(item: Item, descendants: list[Item]):
     """
     Добавляет объекту атрибуты .children и .price
@@ -132,7 +140,9 @@ def update_categories_date(parents_id: list[UUID], date) -> None:
     categories = Item.objects.filter(uuid__in=parents_id)
     categories.update(last_update=date)
 
-    categories_parents = [category.parent.uuid for category in categories if category.parent]
+    categories_parents = [
+        category.parent.uuid for category in categories if category.parent
+    ]
     for parent_id in categories_parents:
         _update_parent_date(parent_id, date)
 
