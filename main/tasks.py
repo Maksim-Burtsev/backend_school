@@ -11,16 +11,18 @@ def _save_items_in_history(date: str) -> None:
 
     items_history = []
     for item in items:
-        if item._type == 'category':
-            #TODO get_price by three info
+        if item._type == "category":
+            # TODO get_price by three info
             item.price = get_price(item)
-        items_history.append(ItemHistory(
-            item=item,
-            _type=item._type,
-            uuid=item.uuid,
-            name=item.name,
-            price=item.price,
-            last_update=date
-        ))
+        items_history.append(
+            ItemHistory(
+                item=item,
+                _type=item._type,
+                uuid=item.uuid,
+                name=item.name,
+                price=item.price,
+                last_update=date,
+            )
+        )
 
     ItemHistory.objects.bulk_create(items_history)

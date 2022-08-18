@@ -8,6 +8,7 @@ from main.services import get_price, get_date_in_iso
 
 class ItemSchema(Schema):
     """Схема объекта Item"""
+
     type: str
     id: UUID
     name: str
@@ -17,6 +18,7 @@ class ItemSchema(Schema):
 
 class ImportSchema(Schema):
     """Схема для /import"""
+
     items: list[ItemSchema]
     updateDate: str
 
@@ -25,13 +27,14 @@ class NodesSchema(Schema):
     """
     Схема для /nodes
     """
+
     name: str
-    id: UUID = Field(..., alias='uuid')
+    id: UUID = Field(..., alias="uuid")
     price: int = None
     date: str
     type: str
-    parentId: UUID = Field(None, alias='parent.uuid')
-    children: list[Optional['NodesSchema']] | None
+    parentId: UUID = Field(None, alias="parent.uuid")
+    children: list[Optional["NodesSchema"]] | None
 
     @staticmethod
     def resolve_type(obj):
@@ -47,9 +50,10 @@ NodesSchema.update_forward_refs()
 
 class SaleSchema(Schema):
     """Схема для /sales"""
-    id: UUID = Field(..., alias='uuid')
+
+    id: UUID = Field(..., alias="uuid")
     name: str
-    parentId: UUID = Field(None, alias='parent.uuid')
+    parentId: UUID = Field(None, alias="parent.uuid")
     type: str
     price: int = None
     date: str
@@ -70,10 +74,11 @@ class SaleSchema(Schema):
 
 class ItemStaticticSchema(Schema):
     """Схема для /node/{id}/statistic"""
-    id: UUID = Field(..., alias='uuid')
+
+    id: UUID = Field(..., alias="uuid")
     name: str
     parentId: UUID = None
-    type: str = Field(..., alias='_type')
+    type: str = Field(..., alias="_type")
     price: int = None
     date: str
 
