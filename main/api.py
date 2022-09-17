@@ -30,6 +30,7 @@ api = NinjaAPI()
 
 @api.exception_handler(ValidationError)
 def validation_errors(request, exc):
+    return HttpResponse("Validation Failed", status=400)
     return HttpResponse("Validation Failed", status_code=400)
 
 
@@ -40,14 +41,11 @@ def import_data(request, data: ImportSchema):
     items = request_data.get("items")
     date = request_data.get("updateDate")
 
-    validate_date(date)
-    validate_items(items)
-
     items_dict = {i["id"]: i for i in items}
     items_id, parents_id = get_items_and_parents_id(items)
 
     db_items = Item.objects.filter(uuid__in=items_id)
-
+    #TODO divide on func
     for item in items:
         save_item(item=item, db_items=db_items, date=date, items_dict=items_dict)
 
@@ -91,7 +89,8 @@ def sales(request, date: str):
 
     end_date = parser.parse(date)
     start_date = end_date - timedelta(days=1)
-
+    
+    #TODO custom manager
     items = Item.objects.filter(
         Q(last_update__gte=start_date) & Q(last_update__lte=end_date)
     ).select_related("parent")
@@ -108,7 +107,8 @@ def statistic(request, id: UUID, dateStart: str = None, dateEnd: str = None):
         raise HttpError(404, "Item not found")
 
     item_history = ItemHistory.objects.filter(item=item)
-
+    
+    #TODO custom manager + date validators
     if dateStart:
         validate_date(dateStart)
         item_history = item_history.filter(last_update__gte=dateStart)

@@ -1,9 +1,11 @@
 from uuid import UUID
 from typing import Optional
 
+from pydantic import validator, root_validator
 from ninja import Schema, Field
 
 from main.services import get_price, get_date_in_iso
+from main.validators import validate_date, validate_type, validate_price, validate_parent
 
 
 class ItemSchema(Schema):
@@ -15,12 +17,33 @@ class ItemSchema(Schema):
     parentId: UUID = None
     price: int = None
 
+    @validator("type")
+    def type_is_valid(cls, type: str) -> str:
+        validate_type(type)
+        return type
+    
+    @root_validator
+    def price_is_valid(cls, values: dict) -> dict:
+        validate_price(values.get("type"), values.get("price"))
+        return values
+
+    @root_validator
+    def parentId_is_valid(cls, values: dict) -> dict:
+        validate_parent(values.get("id"), values.get("parentId"))
+        return values
+
+
 
 class ImportSchema(Schema):
     """Схема для /import"""
 
     items: list[ItemSchema]
     updateDate: str
+
+    @validator("updateDate")
+    def date_is_valid(cls, date: str) -> str:
+        validate_date(date)
+        return date
 
 
 class NodesSchema(Schema):
