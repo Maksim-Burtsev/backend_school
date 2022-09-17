@@ -1,6 +1,8 @@
 from typing import NamedTuple
 from uuid import UUID
 
+from django.db.models import QuerySet
+
 from main.models import Item
 
 
@@ -9,11 +11,28 @@ class ItemsParentsTuple(NamedTuple):
     parentd_id: list[UUID]
 
 
+def get_parents_id(items: dict) -> list[UUID | None]:
+    """Возвращает уникальный список UUID родителей полученных объектов"""
+    return list(set([item["parentId"] for item in items if item["parentId"]]))
+
+
+def save_items(items: dict, date: str) -> None:
+    """Сохраняет объекты в базу"""
+    items_dict = {i["id"]: i for i in items}
+
+    parents_id = get_parents_id(items)
+    items_id = list(set([item["id"] for item in items] + parents_id))
+
+    db_items = Item.objects.filter(uuid__in=items_id)
+    for item in items:
+        save_item(item, db_items, date, items_dict)
+
+
 def get_price(item: Item):
     """Возвращает стоимость объекта. Если это категория, то возвращает среднюю стоимость среди всех потомков"""
     if item._type == "offer":
         return item.price
-
+    # TODO calculate_category_price
     total, count = 0, 0
     descendants = item.get_descendants().select_related("parent")
     for descendant in descendants:
@@ -62,7 +81,7 @@ def set_price_for_descendants_cats(descendants: list[Item]) -> None:
     """Вычисляет стоимость для всех категорий среди потомков и добавляет её в качестве атрибута .price"""
     for i in descendants:
         if i._type == "category":
-            cat_items = _get_cat_items(i)
+            cat_items = get_cat_items(i)
             price, count = 0, 0
             for j in cat_items:
                 price += j.price
@@ -70,13 +89,13 @@ def set_price_for_descendants_cats(descendants: list[Item]) -> None:
             i.price = int(price / count) if count != 0 else None
 
 
-def _get_cat_items(cat_obj: Item) -> list[Item | None]:
+def get_cat_items(cat_obj: Item) -> list[Item | None]:
     """Возвращает список всех товаров, которые являются потомками данной категории"""
 
     items_list = []
     for child in cat_obj.children:
         if child._type == "category":
-            items_list.extend(_get_cat_items(child))
+            items_list.extend(get_cat_items(child))
         else:
             items_list.append(child)
 
@@ -86,6 +105,27 @@ def _get_cat_items(cat_obj: Item) -> list[Item | None]:
 def get_date_in_iso(obj: Item) -> str:
     """Возвращает дату объекта в ISO-8601"""
     return obj.last_update.isoformat()[:-6] + ".000Z"
+
+
+def get_parent_obj(
+    db_items: QuerySet, parent_id: UUID, items_dict: dict, date: str
+) -> Item:
+    """Возвращает объект родителя из QuerySet'a если он он существует, иначе
+    создаёт новый
+
+    db_items - QuerySet объектов, которые пришли в запросе и уже существуют в
+    базе (т.е. их обновляют)"""
+    if db_items.filter(uuid=parent_id).exists():
+        parent_obj = db_items.get(uuid=parent_id)
+    else:
+        parent_data = items_dict[parent_id]
+        parent_obj, _ = Item.objects.get_or_create(
+            _type="category",
+            name=parent_data["name"],
+            uuid=parent_data["id"],
+            last_update=date,
+        )
+    return parent_obj
 
 
 def save_item(item: dict, db_items: dict, date: str, items_dict: dict) -> None:
@@ -101,19 +141,9 @@ def save_item(item: dict, db_items: dict, date: str, items_dict: dict) -> None:
     item_obj.price = item["price"]
     item_obj.last_update = date
 
-    if item["parentId"]:
-        if db_items.filter(uuid=item["parentId"]).exists():
-            parent_obj = db_items.get(uuid=item["parentId"])
-            item_obj.parent = parent_obj
-        else:
-            parent_data = items_dict[item["parentId"]]
-            parent_obj, _ = Item.objects.get_or_create(
-                _type="category",
-                name=parent_data["name"],
-                uuid=parent_data["id"],
-                last_update=date,
-            )
-            item_obj.parent = parent_obj
+    if parent_id := item["parentId"]:
+        parent_obj = get_parent_obj(db_items, parent_id, items_dict, date)
+        item_obj.parent = parent_obj
 
     item_obj.save()
 
@@ -127,10 +157,10 @@ def update_categories_date(parents_id: list[UUID], date) -> None:
         category.parent.uuid for category in categories if category.parent
     ]
     for parent_id in categories_parents:
-        _update_parent_date(parent_id, date)
+        update_parent_date(parent_id, date)
 
 
-def _update_parent_date(parent_id: UUID, date: str) -> None:
+def update_parent_date(parent_id: UUID, date: str) -> None:
     """
     Рекурсивно обходит всех родителей категории до корня и обновляет у них дату
     """
@@ -139,7 +169,7 @@ def _update_parent_date(parent_id: UUID, date: str) -> None:
     item_obj.last_update = date
     item_obj.save()
     if item_obj.parent:
-        _update_parent_date(item_obj.parent.uuid, date)
+        update_parent_date(item_obj.parent.uuid, date)
 
 
 def get_items_and_parents_id(items: dict) -> ItemsParentsTuple:
