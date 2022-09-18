@@ -261,6 +261,7 @@ class APITestCase(TestCase):
         date = "2022-02-02T12:00:00.000Z"
         response = self.client.get(f"/sales?date={date}")
 
+        print(dir(response))
         self.assertEqual(response.status_code, 200)
 
         res = json.loads(response.content)
@@ -371,9 +372,14 @@ class StatisticTestCase(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_statistic_not_found(self):
-        wrong_id = "069cb8d7-bbdd-47d3-ad8f-82ef4c269df1"
-        response = self.client.get(f"/node/{wrong_id}/statistic")
+        missing_id = uuid.uuid4()
+        response = self.client.get(f"/node/{missing_id}/statistic")
         self.assertEqual(response.status_code, 404)
+
+    def test_statistics_wrong_id(self):
+        wrong_id = "something_uncorrect"
+        response = self.client.get(f"/node/{wrong_id}/statistic")
+        self.assertEqual(response.status_code, 400)
 
     def test_statistic_with_dates(self):
         dateStart = "2022-02-02T12:00:00.000Z"
@@ -381,6 +387,39 @@ class StatisticTestCase(TestCase):
 
         response = self.client.get(
             f"/node/{self._id}/statistic?dateStart={dateStart}&dateEnd={dateEnd}"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+
+    @override_settings(CELERY_TASK_ALWAYS_EAGER=True, CELERY_TASK_EAGER_PROPOGATES=True)
+    def test_statistic_with_date(self):
+        id_ = uuid.uuid4()
+        data = {
+            "items": [
+                {
+                    "type": "OFFER",
+                    "name": "Test phone",
+                    "id": id_,
+                    "parentId": self._id,
+                    "price": 7_777_777,
+                },
+            ],
+            "updateDate": "2022-12-22T12:00:00.000Z",
+        }
+        response = self.client.post(
+            "/imports", data=data, content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get(
+            f"/node/{self._id}/statistic?dateStart=2022-12-22T12:00:00.000Z"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+
+        response = self.client.get(
+            f"/node/{self._id}/statistic?dateEnd=2022-12-12T12:00:00.000Z"
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 1)
