@@ -5,8 +5,46 @@ from pydantic import validator, root_validator
 from ninja import Schema, Field
 
 from main.services import get_price, get_date_in_iso
-from main.validators import validate_date, validate_type, validate_price, validate_parent
+from main.validators import (
+    validate_date,
+    validate_id,
+    validate_type,
+    validate_price,
+    validate_parent,
+)
 
+class QueryDates(Schema):
+    dateStart: str | None
+    dateEnd: str | None
+
+    @root_validator
+    def date_is_valid_format(cls, values: dict) -> dict:
+        dateStart, dateEnd = values.get("dateStart"), values.get("dateEnd")
+
+        if dateStart:
+            validate_date(dateStart)
+        if dateEnd:
+            validate_date(dateEnd)
+
+        return values
+
+class QueryDate(Schema):
+    date: str
+
+    @validator("date")
+    def date_is_valid(cls, date: str) -> str:
+        validate_date(date)
+        return date
+ 
+class PathId(Schema):
+    id: str
+
+    @validator("id")
+    def id_is_valid(cls, id: str) -> str:
+        validate_id(id)
+        return id
+
+        
 
 class ItemSchema(Schema):
     """Схема объекта Item"""
@@ -21,7 +59,7 @@ class ItemSchema(Schema):
     def type_is_valid(cls, type: str) -> str:
         validate_type(type)
         return type
-    
+
     @root_validator
     def price_is_valid(cls, values: dict) -> dict:
         validate_price(values.get("type"), values.get("price"))
@@ -31,7 +69,6 @@ class ItemSchema(Schema):
     def parentId_is_valid(cls, values: dict) -> dict:
         validate_parent(values.get("id"), values.get("parentId"))
         return values
-
 
 
 class ImportSchema(Schema):

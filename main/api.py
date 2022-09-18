@@ -6,24 +6,26 @@ from dateutil import parser
 from django.db.models import Q
 from django.http import HttpResponse
 
-from ninja import NinjaAPI
+from ninja import NinjaAPI, Path, Query
 from ninja.errors import HttpError, ValidationError
 
 from main.models import Item, ItemHistory
 from main.schemas import (
-    ImportSchema,
-    NodesSchema,
+    PathId,
+    QueryDate,
+    QueryDates,
     SaleSchema,
+    NodesSchema,
+    ImportSchema,
     ItemStaticticSchema,
 )
 from main.services import (
+    save_items,
+    get_parents_id,
     update_categories_date,
     set_price_and_childrens,
-    get_parents_id,
-    save_items,
 )
 from main.tasks import save_items_in_history
-from main.validators import validate_date, validate_id
 
 api = NinjaAPI()
 
@@ -60,10 +62,9 @@ def delete_item(request, id: UUID):
 
 
 @api.get("/nodes/{id}", response=NodesSchema)
-def nodes(request, id: str):
-    validate_id(id)
+def nodes(request, params: PathId = Path(...)):
     try:
-        item = Item.objects.get(uuid=id)
+        item = Item.objects.get(uuid=params.id)
     except Item.DoesNotExist:
         raise HttpError(404, "Item not found")
 
@@ -75,11 +76,8 @@ def nodes(request, id: str):
 
 
 @api.get("/sales", response=list[SaleSchema])
-def sales(request, date: str):
-
-    validate_date(date)
-
-    end_date = parser.parse(date)
+def sales(request, params: QueryDate = Query(...)):
+    end_date = parser.parse(params.date)
     start_date = end_date - timedelta(days=1)
 
     # TODO custom manager
@@ -91,22 +89,26 @@ def sales(request, date: str):
 
 
 @api.get("/node/{id}/statistic", response=list[ItemStaticticSchema])
-def statistic(request, id: UUID, dateStart: str = None, dateEnd: str = None):
+def statistic(
+    request,
+    path_params: PathId = Path(...),
+    query_params: QueryDates = Query(default=None),
+):
+
+    dateStart, dateEnd = query_params.dateStart, query_params.dateEnd
 
     try:
-        item = Item.objects.get(uuid=id)
+        item = Item.objects.get(uuid=path_params.id)
     except Item.DoesNotExist:
         raise HttpError(404, "Item not found")
 
     item_history = ItemHistory.objects.filter(item=item)
 
-    # TODO custom manager + date validators
+    # TODO custom manager
     if dateStart:
-        validate_date(dateStart)
         item_history = item_history.filter(last_update__gte=dateStart)
 
     if dateEnd:
-        validate_date(dateEnd)
         item_history = item_history.filter(last_update__lte=dateEnd)
 
     return item_history

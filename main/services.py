@@ -27,12 +27,8 @@ def save_items(items: dict, date: str) -> None:
     for item in items:
         save_item(item, db_items, date, items_dict)
 
-
-def get_price(item: Item):
-    """Возвращает стоимость объекта. Если это категория, то возвращает среднюю стоимость среди всех потомков"""
-    if item._type == "offer":
-        return item.price
-    # TODO calculate_category_price
+def calculate_category_price(item: Item):
+    """Считает price категории (= среднюю стоимость её потомков)"""
     total, count = 0, 0
     descendants = item.get_descendants().select_related("parent")
     for descendant in descendants:
@@ -41,6 +37,12 @@ def get_price(item: Item):
             count += 1
 
     return None if total == 0 else int(total / count)
+
+def get_price(item: Item):
+    """Возвращает стоимость объекта. Если это категория, то возвращает среднюю стоимость среди всех потомков"""
+    if item._type == "offer":
+        return item.price
+    return calculate_category_price(item)
 
 
 def set_price_and_childrens(item: Item, descendants: list[Item]):

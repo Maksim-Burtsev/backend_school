@@ -14,7 +14,7 @@ def validate_id(_id: str) -> None:
     """Валидирует id объекта (проверка на UUID)"""
     try:
         _id = UUID(_id)
-    except:
+    except ValueError:
         raise HttpError(400, "Validation error")
 
 
