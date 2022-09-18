@@ -1,9 +1,7 @@
 from uuid import UUID
-from datetime import timedelta
 
 from dateutil import parser
 
-from django.db.models import Q
 from django.http import HttpResponse
 
 from ninja import NinjaAPI, Path, Query
