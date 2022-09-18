@@ -2,6 +2,8 @@ from django.db import models
 
 from mptt.models import MPTTModel, TreeForeignKey
 
+from main.managers import ItemManager, ItemHistoryManager
+
 
 class Item(MPTTModel):
     """Товар/категория"""
@@ -25,6 +27,8 @@ class Item(MPTTModel):
     price = models.IntegerField(null=True, default=None, blank=True)
     last_update = models.DateTimeField(blank=True, null=True)
 
+    objects = ItemManager()
+
     def __str__(self) -> str:
         return self.name
 
@@ -41,6 +45,8 @@ class ItemHistory(models.Model):
     parentId = models.UUIDField(null=True)
     price = models.PositiveIntegerField(blank=True, null=True)
     last_update = models.DateTimeField()
+
+    objects = ItemHistoryManager()
 
     def __str__(self) -> str:
         return self.name

@@ -77,14 +77,9 @@ def nodes(request, params: PathId = Path(...)):
 
 @api.get("/sales", response=list[SaleSchema])
 def sales(request, params: QueryDate = Query(...)):
-    end_date = parser.parse(params.date)
-    start_date = end_date - timedelta(days=1)
+    date = parser.parse(params.date)
 
-    # TODO custom manager
-    items = Item.objects.filter(
-        Q(last_update__gte=start_date) & Q(last_update__lte=end_date)
-    ).select_related("parent")
-
+    items = Item.objects.last_day_from(date)
     return items
 
 
@@ -95,20 +90,13 @@ def statistic(
     query_params: QueryDates = Query(default=None),
 ):
 
-    dateStart, dateEnd = query_params.dateStart, query_params.dateEnd
+    date_start, date_end = query_params.dateStart, query_params.dateEnd
 
     try:
         item = Item.objects.get(uuid=path_params.id)
     except Item.DoesNotExist:
         raise HttpError(404, "Item not found")
 
-    item_history = ItemHistory.objects.filter(item=item)
-
-    # TODO custom manager
-    if dateStart:
-        item_history = item_history.filter(last_update__gte=dateStart)
-
-    if dateEnd:
-        item_history = item_history.filter(last_update__lte=dateEnd)
+    item_history = ItemHistory.objects.item_between_dates(item, date_start, date_end)
 
     return item_history

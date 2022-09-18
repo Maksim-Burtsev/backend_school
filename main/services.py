@@ -3,12 +3,29 @@ from uuid import UUID
 
 from django.db.models import QuerySet
 
-from main.models import Item
+from main.models import Item, ItemHistory
 
 
 class ItemsParentsTuple(NamedTuple):
     items_id: list[UUID]
     parentd_id: list[UUID]
+
+
+def save_in_history(items: QuerySet) -> None:
+    """Сохраняет список объектов в в историю"""
+    items_history = []
+    for item in items:
+        items_history.append(
+            ItemHistory(
+                item=item,
+                _type=item._type,
+                uuid=item.uuid,
+                name=item.name,
+                price=get_price(item) if item._type == "category" else item.price,
+                last_update=item.last_update,
+            )
+        )
+    ItemHistory.objects.bulk_create(items_history)
 
 
 def get_parents_id(items: dict) -> list[UUID | None]:
@@ -27,6 +44,7 @@ def save_items(items: dict, date: str) -> None:
     for item in items:
         save_item(item, db_items, date, items_dict)
 
+
 def calculate_category_price(item: Item):
     """Считает price категории (= среднюю стоимость её потомков)"""
     total, count = 0, 0
@@ -37,6 +55,7 @@ def calculate_category_price(item: Item):
             count += 1
 
     return None if total == 0 else int(total / count)
+
 
 def get_price(item: Item):
     """Возвращает стоимость объекта. Если это категория, то возвращает среднюю стоимость среди всех потомков"""
